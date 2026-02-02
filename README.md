@@ -1,81 +1,143 @@
-# ![Application Icon for Edit](./assets/edit.svg) Edit
+# ![Application Icon for Edit](./assets/edit.svg) Edit - Extended Syntax Highlighting Fork
 
-A simple editor for simple needs.
+A simple terminal-based text editor with extensive syntax highlighting support.
 
-This editor pays homage to the classic [MS-DOS Editor](https://en.wikipedia.org/wiki/MS-DOS_Editor), but with a modern interface and input controls similar to VS Code. The goal is to provide an accessible editor that even users largely unfamiliar with terminals can easily use.
+This is a fork of Microsoft's [Edit](https://github.com/microsoft/edit) that adds modern syntax highlighting for 19 programming languages. The editor pays homage to the classic [MS-DOS Editor](https://en.wikipedia.org/wiki/MS-DOS_Editor), but with a modern interface and input controls similar to VS Code
+
+This is a mirrored version of my fork present on [Modding Forge - Code](https://code.moddingforge.com/Wuerfelhusten/edit-syntax-highlighting/). If you want the binaries you can download them **[here](https://code.moddingforge.com/Wuerfelhusten/edit-syntax-highlighting/-/releases/v1.3.1)**
 
 ![Screenshot of Edit with the About dialog in the foreground](./assets/edit_hero_image.png)
 
+## What's New in This Fork
+
+This fork extends the original Edit with comprehensive syntax highlighting support for additional programming languages and markup formats.
+
+### Supported Languages (19 Total)
+
+| Language             | File Extensions                                     | Features                                                 |
+| -------------------- | --------------------------------------------------- | -------------------------------------------------------- |
+| **JSON/JSONC** | `.json`, `.jsonc`                               | Object/array literals, strings, numbers, booleans        |
+| **Rust**       | `.rs`                                             | Keywords, macros, attributes, lifetimes, raw strings     |
+| **Python**     | `.py`, `.pyw`, `.pyi`                         | Keywords, decorators, f-strings, triple-quoted strings   |
+| **JavaScript** | `.js`, `.mjs`, `.cjs`                         | ES6+ features, template literals, regex                  |
+| **TypeScript** | `.ts`, `.mts`, `.cts`                         | TypeScript-specific syntax, generics                     |
+| **Markdown**   | `.md`, `.markdown`                              | Headers, lists, code blocks, links, emphasis             |
+| **TOML**       | `.toml`                                           | Tables, arrays, key-value pairs                          |
+| **YAML**       | `.yaml`, `.yml`                                 | Keys, values, sequences, mappings                        |
+| **C**          | `.c`, `.h`                                      | Preprocessor directives, C23 features, standard types    |
+| **C++**        | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx`     | C++20 features, raw strings, templates, STL              |
+| **C#**         | `.cs`                                             | C# 9.0+ features, LINQ, interpolated strings, attributes |
+| **Go**         | `.go`                                             | Goroutines, channels, defer, built-in functions          |
+| **HTML**       | `.html`, `.htm`                                 | Tags, attributes, DOCTYPE, comments                      |
+| **CSS**        | `.css`                                            | Selectors, at-rules, properties, colors                  |
+| **Java**       | `.java`                                           | Java 17 features, annotations, Javadoc, text blocks      |
+| **XML**        | `.xml`, `.svg`, `.xhtml`, `.xsd`, `.wsdl` | Tags, CDATA, processing instructions, entities           |
+| **Shell**      | `.sh`, `.bash`, `.zsh`                        | Variables, builtins, redirections, command substitution  |
+| **SQL**        | `.sql`                                            | DDL/DML/DCL keywords, data types, functions              |
+| **AsciiDoc**   | `.adoc`, `.asciidoc`, `.asc`                  | Headers, lists, macros, attributes, formatting           |
+
+### Lexer Architecture
+
+All lexers implement high-performance byte-level parsing with:
+
+- **Zero-copy tokenization** - Direct byte slice processing
+- **Context-aware highlighting** - Language-specific features
+- **Multi-line support** - Block comments, strings, heredocs
+- **Escape sequences** - Proper handling of string escapes
+
 ## Installation
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/microsoft-edit.svg?exclude_unsupported=1)](https://repology.org/project/microsoft-edit/versions)
+You can download binaries from the [Releases page](../../releases/latest) or build from source.
 
-You can also download binaries from [our Releases page](https://github.com/microsoft/edit/releases/latest).
+### Build from Source
 
-### Windows
+Requirements:
 
-You can install the latest version with WinGet:
-```powershell
-winget install Microsoft.Edit
+- [Rust](https://www.rust-lang.org/tools/install) (nightly toolchain recommended)
+- Git
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd edit
+
+# Build release version
+cargo build --release --package edit
+
+# Binary will be in target/release/edit
 ```
-
-## Build Instructions
-
-* [Install Rust](https://www.rust-lang.org/tools/install)
-* Install the nightly toolchain: `rustup install nightly`
-  * Alternatively, set the environment variable `RUSTC_BOOTSTRAP=1`
-* Clone the repository
-* For a release build, run:
-  * Rust 1.90 or earlier: `cargo build --config .cargo/release.toml --release`
-  * otherwise: `cargo build --config .cargo/release-nightly.toml --release`
 
 ### Build Configuration
 
-During compilation you can set various environment variables to configure the build. The following table lists the available configuration options:
+| Environment variable   | Description                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `EDIT_CFG_ICU*`      | See[ICU library name (SONAME)](#icu-library-name-soname) for details.              |
+| `EDIT_CFG_LANGUAGES` | Comma-separated list of languages to include. See[i18n/edit.toml](i18n/edit.toml). |
 
-Environment variable | Description
---- | ---
-`EDIT_CFG_ICU*` | See [ICU library name (SONAME)](#icu-library-name-soname) for details.
-`EDIT_CFG_LANGUAGES` | A comma-separated list of languages to include in the build. See [i18n/edit.toml](i18n/edit.toml) for available languages.
+## Usage
 
-## Notes to Package Maintainers
+```bash
+# Open a file
+edit filename.rs
 
-### Package Naming
+# Create new file
+edit newfile.py
+```
 
-The canonical executable name is "edit" and the alternative name is "msedit".
-We're aware of the potential conflict of "edit" with existing commands and recommend alternatively naming packages and executables "msedit".
-Names such as "ms-edit" should be avoided.
-Assigning an "edit" alias is recommended, if possible.
+**Keyboard Shortcuts:**
 
-### ICU library name (SONAME)
+- Standard shortcuts similar to VS Code and modern editors
+- Full terminal compatibility with support for mouse input
+- Context menus and dialog boxes for common operations
 
-This project _optionally_ depends on the ICU library for its Search and Replace functionality.
-By default, the project will look for a SONAME without version suffix:
+## Original Project
+
+This fork is based on [Microsoft Edit](https://github.com/microsoft/edit) v1.2.1.
+
+Original features include:
+
+- Simple, accessible terminal-based editor
+- Modern UI inspired by MS-DOS Editor
+- Cross-platform support (Windows, Linux, macOS)
+- Optional ICU integration for advanced text operations
+
+## ICU Library Name (SONAME)
+
+This project _optionally_ depends on the ICU library for Search and Replace functionality.
+By default, the project looks for a SONAME without version suffix:
+
 * Windows: `icuuc.dll`
 * macOS: `libicuuc.dylib`
-* UNIX, and other OS: `libicuuc.so`
+* UNIX: `libicuuc.so`
 
-If your installation uses a different SONAME, please set the following environment variable at build time:
-* `EDIT_CFG_ICUUC_SONAME`:
-  For instance, `libicuuc.so.76`.
-* `EDIT_CFG_ICUI18N_SONAME`:
-  For instance, `libicui18n.so.76`.
+If your installation uses a different SONAME, set these environment variables at build time:
 
-Additionally, this project assumes that the ICU exports are exported without `_` prefix and without version suffix, such as `u_errorName`.
-If your installation uses versioned exports, please set:
-* `EDIT_CFG_ICU_CPP_EXPORTS`:
-  If set to `true`, it'll look for C++ symbols such as `_u_errorName`.
-  Enabled by default on macOS.
-* `EDIT_CFG_ICU_RENAMING_VERSION`:
-  If set to a version number, such as `76`, it'll look for symbols such as `u_errorName_76`.
+* `EDIT_CFG_ICUUC_SONAME`: e.g., `libicuuc.so.76`
+* `EDIT_CFG_ICUI18N_SONAME`: e.g., `libicui18n.so.76`
 
-Finally, you can set the following environment variables:
-* `EDIT_CFG_ICU_RENAMING_AUTO_DETECT`:
-  If set to `true`, the executable will try to detect the `EDIT_CFG_ICU_RENAMING_VERSION` value at runtime.
-  The way it does this is not officially supported by ICU and as such is not recommended to be relied upon.
-  Enabled by default on UNIX (excluding macOS) if no other options are set.
+For versioned exports:
 
-To test your settings, run `cargo test` again but with the `--ignored` flag. For instance:
+* `EDIT_CFG_ICU_CPP_EXPORTS`: Set to `true` for C++ symbols (default on macOS)
+* `EDIT_CFG_ICU_RENAMING_VERSION`: Version number for suffixed symbols
+* `EDIT_CFG_ICU_RENAMING_AUTO_DETECT`: Auto-detect version at runtime (UNIX only)
+
+Test your ICU configuration:
+
 ```sh
 cargo test -- --ignored
 ```
+
+## Contributing
+
+Contributions are welcome! Areas for improvement:
+
+- Additional language lexers
+- Performance optimizations
+- Bug fixes and testing
+- Documentation improvements
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+Original project © Microsoft Corporation
