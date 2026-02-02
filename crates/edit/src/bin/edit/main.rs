@@ -10,6 +10,7 @@ mod draw_filepicker;
 mod draw_menubar;
 mod draw_statusbar;
 mod localization;
+mod settings;
 mod state;
 
 use std::borrow::Cow;
@@ -86,12 +87,25 @@ fn run() -> apperr::Result<()> {
 
     let _restore = setup_terminal(&mut tui, &mut state, &mut vt_parser);
 
-    state.menubar_color_bg = tui.indexed(IndexedColor::Background).oklab_blend(tui.indexed_alpha(
-        IndexedColor::BrightBlue,
-        1,
-        2,
-    ));
+    // Use custom titlebar color from settings if configured, otherwise use default
+    state.menubar_color_bg = state.settings.titlebar_color.unwrap_or_else(|| {
+        tui.indexed(IndexedColor::Background).oklab_blend(tui.indexed_alpha(
+            IndexedColor::BrightBlue,
+            1,
+            2,
+        ))
+    });
     state.menubar_color_fg = tui.contrasted(state.menubar_color_bg);
+    
+    // Use custom selection color from settings if configured, otherwise use default green
+    state.selection_color_bg = state.settings.selection_color.unwrap_or_else(|| {
+        tui.indexed(IndexedColor::Green)
+    });
+    
+    // Set line number and separator colors from settings (no defaults, buffer will use defaults if None)
+    state.line_number_color = state.settings.line_number_color;
+    state.line_separator_color = state.settings.line_separator_color;
+    
     let floater_bg = tui
         .indexed_alpha(IndexedColor::Background, 2, 3)
         .oklab_blend(tui.indexed_alpha(IndexedColor::Foreground, 1, 3));
@@ -105,6 +119,9 @@ fn run() -> apperr::Result<()> {
     tui.set_floater_default_fg(floater_fg);
     tui.set_modal_default_bg(floater_bg);
     tui.set_modal_default_fg(floater_fg);
+    tui.set_selection_default_bg(state.selection_color_bg);
+    tui.set_line_number_color(state.line_number_color);
+    tui.set_line_separator_color(state.line_separator_color);
 
     sys::inject_window_size_into_stdin();
 
@@ -333,6 +350,12 @@ fn draw(ctx: &mut Context, state: &mut State) {
     }
     if state.wants_about {
         draw_dialog_about(ctx, state);
+    }
+    if state.wants_settings {
+        draw_dialog_settings(ctx, state);
+    }
+    if state.wants_restart_warning {
+        draw_dialog_restart_warning(ctx, state);
     }
     if ctx.clipboard_ref().wants_host_sync() {
         draw_handle_clipboard_change(ctx, state);

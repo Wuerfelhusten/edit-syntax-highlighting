@@ -15,6 +15,7 @@ use edit::{buffer, icu};
 use crate::apperr;
 use crate::documents::DocumentManager;
 use crate::localization::*;
+use crate::settings::Settings;
 
 #[repr(transparent)]
 pub struct FormatApperr(apperr::Error);
@@ -128,8 +129,12 @@ pub struct OscTitleFileStatus {
 }
 
 pub struct State {
+    pub settings: Settings,
     pub menubar_color_bg: StraightRgba,
     pub menubar_color_fg: StraightRgba,
+    pub selection_color_bg: StraightRgba,
+    pub line_number_color: Option<StraightRgba>,
+    pub line_separator_color: Option<StraightRgba>,
 
     pub documents: DocumentManager,
 
@@ -162,11 +167,19 @@ pub struct State {
     pub wants_indentation_picker: bool,
     pub wants_go_to_file: bool,
     pub wants_about: bool,
+    pub wants_settings: bool,
+    pub wants_restart_warning: bool,
+    pub settings_dialog_initialized: bool,
     pub wants_close: bool,
     pub wants_exit: bool,
     pub wants_goto: bool,
     pub goto_target: String,
     pub goto_invalid: bool,
+
+    pub settings_titlebar_color_input: String,
+    pub settings_selection_color_input: String,
+    pub settings_line_number_color_input: String,
+    pub settings_line_separator_color_input: String,
 
     pub osc_title_file_status: OscTitleFileStatus,
     pub osc_clipboard_sync: bool,
@@ -176,9 +189,14 @@ pub struct State {
 
 impl State {
     pub fn new() -> apperr::Result<Self> {
+        let settings = Settings::load().unwrap_or_default();
         Ok(Self {
+            settings,
             menubar_color_bg: StraightRgba::zero(),
             menubar_color_fg: StraightRgba::zero(),
+            selection_color_bg: StraightRgba::zero(),
+            line_number_color: None,
+            line_separator_color: None,
 
             documents: Default::default(),
 
@@ -210,11 +228,19 @@ impl State {
             wants_indentation_picker: false,
             wants_go_to_file: false,
             wants_about: false,
+            wants_settings: false,
+            wants_restart_warning: false,
+            settings_dialog_initialized: false,
             wants_close: false,
             wants_exit: false,
             wants_goto: false,
             goto_target: Default::default(),
             goto_invalid: false,
+
+            settings_titlebar_color_input: String::new(),
+            settings_selection_color_input: String::new(),
+            settings_line_number_color_input: String::new(),
+            settings_line_separator_color_input: String::new(),
 
             osc_title_file_status: Default::default(),
             osc_clipboard_sync: false,

@@ -322,6 +322,7 @@ pub struct Tui {
     floater_default_fg: StraightRgba,
     modal_default_bg: StraightRgba,
     modal_default_fg: StraightRgba,
+    selection_default_bg: StraightRgba,
 
     /// Last known terminal size.
     ///
@@ -398,6 +399,7 @@ impl Tui {
             floater_default_fg: StraightRgba::zero(),
             modal_default_bg: StraightRgba::zero(),
             modal_default_fg: StraightRgba::zero(),
+            selection_default_bg: StraightRgba::zero(),
 
             size: Size { width: 0, height: 0 },
             mouse_position: Point::MIN,
@@ -455,6 +457,21 @@ impl Tui {
     /// Set the default foreground color for modals.
     pub fn set_modal_default_fg(&mut self, color: StraightRgba) {
         self.modal_default_fg = color;
+    }
+
+    /// Set the default background color for selections.
+    pub fn set_selection_default_bg(&mut self, color: StraightRgba) {
+        self.selection_default_bg = color;
+    }
+
+    /// Set the line number color for text buffers.
+    pub fn set_line_number_color(&mut self, color: Option<StraightRgba>) {
+        self.framebuffer.set_line_number_color(color);
+    }
+
+    /// Set the line separator color for text buffers.
+    pub fn set_line_separator_color(&mut self, color: Option<StraightRgba>) {
+        self.framebuffer.set_line_separator_color(color);
     }
 
     /// If the TUI is currently running animations, etc.,
@@ -3102,8 +3119,8 @@ impl<'a> Context<'a, '_> {
         if contains_focus {
             {
                 let mut node = selected_next.borrow_mut();
-                node.attributes.bg = self.indexed(IndexedColor::Green);
-                node.attributes.fg = self.contrasted(self.indexed(IndexedColor::Green));
+                node.attributes.bg = self.tui.selection_default_bg;
+                node.attributes.fg = self.contrasted(self.tui.selection_default_bg);
             }
             self.steal_focus_for(selected_next);
         }
@@ -3143,8 +3160,8 @@ impl<'a> Context<'a, '_> {
             self.attr_foreground_rgba(self.tui.floater_default_fg);
 
             if self.is_focused() {
-                self.attr_background_rgba(self.indexed(IndexedColor::Green));
-                self.attr_foreground_rgba(self.contrasted(self.indexed(IndexedColor::Green)));
+                self.attr_background_rgba(self.tui.selection_default_bg);
+                self.attr_foreground_rgba(self.contrasted(self.tui.selection_default_bg));
             }
 
             self.next_block_id_mixin(mixin);
@@ -3197,8 +3214,8 @@ impl<'a> Context<'a, '_> {
         }
 
         if self.is_focused() {
-            self.attr_background_rgba(self.indexed(IndexedColor::Green));
-            self.attr_foreground_rgba(self.contrasted(self.indexed(IndexedColor::Green)));
+            self.attr_background_rgba(self.tui.selection_default_bg);
+            self.attr_foreground_rgba(self.contrasted(self.tui.selection_default_bg));
         }
 
         let clicked =

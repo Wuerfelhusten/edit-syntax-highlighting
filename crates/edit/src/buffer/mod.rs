@@ -1839,10 +1839,10 @@ impl TextBuffer {
                     unsafe { std::hint::assert_unchecked(off < MARGIN_TEMPLATE.len()) };
                     line.push_str(&MARGIN_TEMPLATE[off..]);
                 } else if self.word_wrap_column <= 0 || cursor_beg.logical_pos.x == 0 {
-                    // Regular line? Place "123 | " in the margin.
+                    // Regular line? Place "123 │ " in the margin.
                     _ = write!(line, "{:1$} │ ", cursor_beg.logical_pos.y + 1, line_number_width);
                 } else {
-                    // Wrapped line? Place " ... | " in the margin.
+                    // Wrapped line? Place " ... │ " in the margin.
                     let number_width = (cursor_beg.logical_pos.y + 1).ilog10() as usize + 1;
                     _ = write!(
                         line,
@@ -2038,6 +2038,31 @@ impl TextBuffer {
             }
 
             fb.replace_text(destination.top + y, destination.left, destination.right, &line);
+
+            // Apply custom line number and separator colors if set
+            if line_number_width != 0 {
+                // Apply line number color
+                if let Some(color) = fb.line_number_color {
+                    let line_number_rect = Rect {
+                        left: destination.left,
+                        top: destination.top + y,
+                        right: destination.left + line_number_width as CoordType,
+                        bottom: destination.top + y + 1,
+                    };
+                    fb.blend_fg(line_number_rect, color);
+                }
+                
+                // Apply separator color (the "│" character)
+                if let Some(color) = fb.line_separator_color {
+                    let separator_rect = Rect {
+                        left: destination.left + line_number_width as CoordType + 1,
+                        top: destination.top + y,
+                        right: destination.left + line_number_width as CoordType + 2,
+                        bottom: destination.top + y + 1,
+                    };
+                    fb.blend_fg(separator_rect, color);
+                }
+            }
 
             // Apply syntax highlighting colors to the rendered line
             // Collect tokens first to avoid borrow checker issues

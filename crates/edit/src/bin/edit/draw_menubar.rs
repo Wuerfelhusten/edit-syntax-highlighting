@@ -4,6 +4,7 @@
 use edit::helpers::*;
 use edit::input::{kbmod, vk};
 use edit::tui::*;
+use edit::framebuffer::IndexedColor;
 use stdext::arena_format;
 
 use crate::localization::*;
@@ -127,6 +128,9 @@ fn draw_menu_view(ctx: &mut Context, state: &mut State) {
 }
 
 fn draw_menu_help(ctx: &mut Context, state: &mut State) {
+    if ctx.menubar_menu_button(loc(LocId::HelpSettings), 'S', vk::NULL) {
+        state.wants_settings = true;
+    }
     if ctx.menubar_menu_button(loc(LocId::HelpAbout), 'A', vk::NULL) {
         state.wants_about = true;
     }
@@ -176,5 +180,215 @@ pub fn draw_dialog_about(ctx: &mut Context, state: &mut State) {
     }
     if ctx.modal_end() {
         state.wants_about = false;
+    }
+}
+
+pub fn draw_dialog_settings(ctx: &mut Context, state: &mut State) {
+    ctx.modal_begin("settings", loc(LocId::SettingsDialogTitle));
+    {
+        // Initialize input fields only once when dialog is opened
+        if !state.settings_dialog_initialized {
+            state.settings_dialog_initialized = true;
+            
+            // Initialize with current colors if set, otherwise leave empty
+            if let Some(color) = state.settings.titlebar_color {
+                state.settings_titlebar_color_input = crate::settings::Settings::color_to_hex_pub(color);
+            }
+            if let Some(color) = state.settings.selection_color {
+                state.settings_selection_color_input = crate::settings::Settings::color_to_hex_pub(color);
+            }
+            if let Some(color) = state.settings.line_number_color {
+                state.settings_line_number_color_input = crate::settings::Settings::color_to_hex_pub(color);
+            }
+            if let Some(color) = state.settings.line_separator_color {
+                state.settings_line_separator_color_input = crate::settings::Settings::color_to_hex_pub(color);
+            }
+        }
+        
+        ctx.block_begin("content");
+        ctx.inherit_focus();
+        ctx.attr_padding(Rect::three(1, 2, 1));
+        {
+            ctx.label("titlebar-label", loc(LocId::SettingsTitlebarColor));
+            ctx.attr_overflow(Overflow::TruncateTail);
+
+            // Color input field
+            ctx.editline("titlebar-color-input", &mut state.settings_titlebar_color_input);
+            ctx.inherit_focus();
+            ctx.attr_intrinsic_size(Size { width: 200, height: 1 });
+
+            ctx.label("hint", loc(LocId::SettingsTitlebarColorHint));
+            ctx.attr_overflow(Overflow::TruncateTail);
+            ctx.attr_foreground_rgba(ctx.indexed(IndexedColor::BrightBlack));
+
+            // Selection color section
+            ctx.label("selection-label", loc(LocId::SettingsSelectionColor));
+            ctx.attr_overflow(Overflow::TruncateTail);
+
+            // Selection color input field
+            ctx.editline("selection-color-input", &mut state.settings_selection_color_input);
+            ctx.inherit_focus();
+            ctx.attr_intrinsic_size(Size { width: 200, height: 1 });
+
+            ctx.label("hint2", loc(LocId::SettingsSelectionColorHint));
+            ctx.attr_overflow(Overflow::TruncateTail);
+            ctx.attr_foreground_rgba(ctx.indexed(IndexedColor::BrightBlack));
+
+            // Line number color section
+            ctx.label("line-number-label", loc(LocId::SettingsLineNumberColor));
+            ctx.attr_overflow(Overflow::TruncateTail);
+
+            // Line number color input field
+            ctx.editline("line-number-color-input", &mut state.settings_line_number_color_input);
+            ctx.inherit_focus();
+            ctx.attr_intrinsic_size(Size { width: 200, height: 1 });
+
+            ctx.label("hint3", loc(LocId::SettingsLineNumberColorHint));
+            ctx.attr_overflow(Overflow::TruncateTail);
+            ctx.attr_foreground_rgba(ctx.indexed(IndexedColor::BrightBlack));
+
+            // Line separator color section
+            ctx.label("line-separator-label", loc(LocId::SettingsLineSeparatorColor));
+            ctx.attr_overflow(Overflow::TruncateTail);
+
+            // Line separator color input field
+            ctx.editline("line-separator-color-input", &mut state.settings_line_separator_color_input);
+            ctx.inherit_focus();
+            ctx.attr_intrinsic_size(Size { width: 200, height: 1 });
+
+            ctx.label("hint4", loc(LocId::SettingsLineSeparatorColorHint));
+            ctx.attr_overflow(Overflow::TruncateTail);
+            ctx.attr_foreground_rgba(ctx.indexed(IndexedColor::BrightBlack));
+
+            ctx.block_begin("choices");
+            ctx.inherit_focus();
+            ctx.attr_padding(Rect::three(1, 2, 0));
+            ctx.attr_position(Position::Center);
+            {
+                if ctx.button("save", loc(LocId::Save), ButtonStyle::default()) {
+                    // Track old values for restart warning
+                    let old_selection_color = state.settings.selection_color;
+                    let old_line_number_color = state.settings.line_number_color;
+                    let old_line_separator_color = state.settings.line_separator_color;
+                    
+                    // Try to parse and save titlebar color (empty or "#" = default)
+                    let titlebar_input = state.settings_titlebar_color_input.trim();
+                    if titlebar_input.is_empty() || titlebar_input == "#" {
+                        state.settings.titlebar_color = None;
+                    } else if let Some(color) = crate::settings::Settings::parse_color_pub(titlebar_input) {
+                        state.settings.titlebar_color = Some(color);
+                    }
+                    
+                    // Try to parse and save selection color (empty or "#" = default)
+                    let selection_input = state.settings_selection_color_input.trim();
+                    if selection_input.is_empty() || selection_input == "#" {
+                        state.settings.selection_color = None;
+                    } else if let Some(color) = crate::settings::Settings::parse_color_pub(selection_input) {
+                        state.settings.selection_color = Some(color);
+                    }
+                    
+                    // Try to parse and save line number color (empty or "#" = default)
+                    let line_number_input = state.settings_line_number_color_input.trim();
+                    if line_number_input.is_empty() || line_number_input == "#" {
+                        state.settings.line_number_color = None;
+                    } else if let Some(color) = crate::settings::Settings::parse_color_pub(line_number_input) {
+                        state.settings.line_number_color = Some(color);
+                    }
+                    
+                    // Try to parse and save line separator color (empty or "#" = default)
+                    let line_separator_input = state.settings_line_separator_color_input.trim();
+                    if line_separator_input.is_empty() || line_separator_input == "#" {
+                        state.settings.line_separator_color = None;
+                    } else if let Some(color) = crate::settings::Settings::parse_color_pub(line_separator_input) {
+                        state.settings.line_separator_color = Some(color);
+                    }
+                    
+                    let _ = state.settings.save();
+                    
+                    // Apply the colors immediately
+                    state.menubar_color_bg = state.settings.titlebar_color.unwrap_or_else(|| {
+                        ctx.indexed(IndexedColor::Background).oklab_blend(ctx.indexed_alpha(
+                            IndexedColor::BrightBlue,
+                            1,
+                            2,
+                        ))
+                    });
+                    state.menubar_color_fg = ctx.contrasted(state.menubar_color_bg);
+                    
+                    state.selection_color_bg = state.settings.selection_color.unwrap_or_else(|| {
+                        ctx.indexed(IndexedColor::Green)
+                    });
+                    
+                    state.line_number_color = state.settings.line_number_color;
+                    state.line_separator_color = state.settings.line_separator_color;
+                    
+                    // Check if any colors requiring restart changed
+                    let needs_restart = old_selection_color != state.settings.selection_color
+                        || old_line_number_color != state.settings.line_number_color
+                        || old_line_separator_color != state.settings.line_separator_color;
+                    
+                    if needs_restart {
+                        state.wants_restart_warning = true;
+                    }
+                    
+                    state.wants_settings = false;
+                    state.settings_dialog_initialized = false;
+                    state.settings_titlebar_color_input.clear();
+                    state.settings_selection_color_input.clear();
+                    state.settings_line_number_color_input.clear();
+                    state.settings_line_separator_color_input.clear();
+                    ctx.needs_rerender();
+                }
+                ctx.inherit_focus();
+
+                if ctx.button("cancel", loc(LocId::Cancel), ButtonStyle::default()) {
+                    state.wants_settings = false;
+                    state.settings_dialog_initialized = false;
+                    state.settings_titlebar_color_input.clear();
+                    state.settings_selection_color_input.clear();
+                    state.settings_line_number_color_input.clear();
+                    state.settings_line_separator_color_input.clear();
+                }
+            }
+            ctx.block_end();
+        }
+        ctx.block_end();
+    }
+    if ctx.modal_end() {
+        state.wants_settings = false;
+        state.settings_dialog_initialized = false;
+        state.settings_titlebar_color_input.clear();
+        state.settings_selection_color_input.clear();
+        state.settings_line_number_color_input.clear();
+        state.settings_line_separator_color_input.clear();
+    }
+}
+
+pub fn draw_dialog_restart_warning(ctx: &mut Context, state: &mut State) {
+    ctx.modal_begin("restart-warning", loc(LocId::SettingsDialogTitle));
+    {
+        ctx.block_begin("content");
+        ctx.inherit_focus();
+        ctx.attr_padding(Rect::three(1, 2, 1));
+        {
+            ctx.label("message", loc(LocId::SettingsRestartRequired));
+            ctx.attr_overflow(Overflow::TruncateTail);
+
+            ctx.block_begin("choices");
+            ctx.inherit_focus();
+            ctx.attr_padding(Rect::three(1, 2, 0));
+            ctx.attr_position(Position::Center);
+            {
+                if ctx.button("ok", loc(LocId::Ok), ButtonStyle::default()) {
+                    state.wants_restart_warning = false;
+                }
+                ctx.inherit_focus();
+            }
+            ctx.block_end();
+        }
+        ctx.block_end();
+    }
+    if ctx.modal_end() {
+        state.wants_restart_warning = false;
     }
 }

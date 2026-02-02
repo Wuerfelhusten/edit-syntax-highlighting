@@ -114,6 +114,8 @@ pub struct Framebuffer {
     contrast_colors: [Cell<(StraightRgba, StraightRgba)>; CACHE_TABLE_SIZE],
     background_fill: StraightRgba,
     foreground_fill: StraightRgba,
+    pub(crate) line_number_color: Option<StraightRgba>,
+    pub(crate) line_separator_color: Option<StraightRgba>,
 }
 
 impl Framebuffer {
@@ -132,6 +134,8 @@ impl Framebuffer {
                 CACHE_TABLE_SIZE],
             background_fill: DEFAULT_THEME[IndexedColor::Background as usize],
             foreground_fill: DEFAULT_THEME[IndexedColor::Foreground as usize],
+            line_number_color: None,
+            line_separator_color: None,
         }
     }
 
@@ -161,6 +165,16 @@ impl Framebuffer {
         if lightness[0] > lightness[1] {
             self.auto_colors.swap(0, 1);
         }
+    }
+
+    /// Sets the line number color for text buffers.
+    pub fn set_line_number_color(&mut self, color: Option<StraightRgba>) {
+        self.line_number_color = color;
+    }
+
+    /// Sets the line separator color for text buffers.
+    pub fn set_line_separator_color(&mut self, color: Option<StraightRgba>) {
+        self.line_separator_color = color;
     }
 
     /// Begins a new frame with the given `size`.
