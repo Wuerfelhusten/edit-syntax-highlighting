@@ -1,0 +1,68 @@
+# TOML Syntax Highlighting Demo
+# Configuration file example
+
+# Basic key-value pairs
+title = "TOML Example"
+description = """
+Multi-line string
+with multiple lines
+"""
+
+[package]
+name = "example"
+version = "1.0.0"
+edition = "2021"
+authors = ["Developer <dev@example.com>"]
+
+# Numbers
+count = 42
+price = 9.99
+negative = -17
+hex = 0xDEADBEEF
+octal = 0o755
+binary = 0b11010110
+
+# Booleans
+enabled = true
+disabled = false
+
+# Dates (inline tables)
+date = 2026-02-01T10:00:00Z
+
+# Arrays
+dependencies = [
+    "serde",
+    "tokio",
+    "async-std",
+]
+
+# Inline tables
+point = { x = 1, y = 2, z = 3 }
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tokio = "1.0"
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+
+[[bin]]
+name = "cli"
+path = "src/cli.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+# Nested tables
+[server.database]
+host = "localhost"
+port = 5432
+username = "admin"
+password = "secret"
+
+[server.cache]
+enabled = true
+ttl = 3600

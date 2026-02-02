@@ -1,0 +1,102 @@
+# YAML Syntax Highlighting Demo
+---
+# Document start marker
+
+# Basic key-value pairs
+title: YAML Example
+description: |
+  Multi-line string
+  with pipe notation
+  preserving newlines
+
+# Nested structures
+server:
+  host: localhost
+  port: 8080
+  database:
+    name: mydb
+    username: admin
+    password: secret
+  
+# Lists
+dependencies:
+  - name: serde
+    version: "1.0"
+  - name: tokio
+    version: "1.0"
+  - name: async-std
+    version: "1.12"
+
+# Simple list
+colors:
+  - red
+  - green
+  - blue
+
+# Numbers
+count: 42
+price: 9.99
+negative: -17
+scientific: 1.5e-10
+
+# Booleans
+enabled: true
+disabled: false
+also_true: yes
+also_false: no
+
+# Null values
+nothing: null
+tilde: ~
+
+# Multiline strings (folded)
+folded: >
+  This is a folded
+  string that will be
+  converted to a single line
+
+# Anchors and aliases
+defaults: &defaults
+  adapter: postgres
+  host: localhost
+  port: 5432
+
+development:
+  <<: *defaults
+  database: dev_db
+
+production:
+  <<: *defaults
+  database: prod_db
+  pool: 25
+
+# Inline collections
+point: {x: 1, y: 2, z: 3}
+array: [1, 2, 3, 4, 5]
+
+# Tags
+special: !!str 123
+date: !!timestamp 2026-02-01
+
+# Complex structures
+users:
+  - name: Alice
+    role: admin
+    permissions: [read, write, delete]
+  - name: Bob
+    role: user
+    permissions:
+      - read
+
+# Environment-specific config
+environment: production
+features:
+  caching:
+    enabled: true
+    ttl: 3600
+  logging:
+    level: info
+    format: json
+
+...
+# Document end marker

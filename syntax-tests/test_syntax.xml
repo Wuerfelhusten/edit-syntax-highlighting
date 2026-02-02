@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML Syntax Test -->
+
+<!DOCTYPE catalog [
+    <!ELEMENT catalog (book+)>
+    <!ELEMENT book (title, author+, year, price)>
+]>
+
+<catalog xmlns="http://example.com/catalog"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://example.com/catalog catalog.xsd">
+    
+    <!-- Book entries -->
+    <book id="bk101" category="TECHNOLOGY">
+        <title lang="en">XML Developer's Guide</title>
+        <author>Gambardella, Matthew</author>
+        <year>2000</year>
+        <price currency="USD">44.95</price>
+        <description>
+            <![CDATA[
+                An in-depth look at creating applications 
+                with XML. Uses <brackets> and & special chars.
+            ]]>
+        </description>
+        <keywords>
+            <keyword>XML</keyword>
+            <keyword>Programming</keyword>
+            <keyword>Web</keyword>
+        </keywords>
+    </book>
+
+    <book id="bk102" category="FICTION" available="true">
+        <title lang="en">Midnight Rain</title>
+        <author>Ralls, Kim</author>
+        <year>2000</year>
+        <price currency="USD">5.95</price>
+        <description>
+            A former architect battles corporate zombies, 
+            an evil sorceress, and her own childhood to become queen 
+            of the world.
+        </description>
+    </book>
+
+    <book id="bk103" category="FANTASY">
+        <title lang="de">Maeve Ascendant</title>
+        <author>Corets, Eva</author>
+        <year>2000</year>
+        <price currency="EUR">5.95</price>
+        <description>
+            After the collapse of a nanotechnology society in England, 
+            the young survivors lay the foundation for a new society.
+        </description>
+        <ratings>
+            <rating source="Goodreads">4.5</rating>
+            <rating source="Amazon">4.2</rating>
+        </ratings>
+    </book>
+
+    <!-- Self-closing tags -->
+    <metadata>
+        <created date="2026-02-01"/>
+        <updated date="2026-02-01"/>
+        <version value="1.0"/>
+    </metadata>
+
+    <!-- Attributes with special characters -->
+    <search query="books &amp; authors" limit="10"/>
+    
+    <!-- Empty elements -->
+    <placeholder/>
+    <separator></separator>
+
+    <!-- Processing instruction -->
+    <?xml-stylesheet type="text/xsl" href="catalog.xsl"?>
+
+    <!-- Entity references -->
+    <footer>
+        Copyright &copy; 2026 Example Corp.
+        Price: 5 &lt; 10 &amp; 10 &gt; 5
+        Quote: &quot;Hello World&quot;
+        Apostrophe: &apos;test&apos;
+    </footer>
+</catalog>

@@ -45,6 +45,7 @@ use crate::framebuffer::{Framebuffer, IndexedColor};
 use crate::helpers::*;
 use crate::oklab::StraightRgba;
 use crate::simd::memchr2;
+use crate::syntax::{Language, SyntaxHighlighter, Theme};
 use crate::unicode::{self, Cursor, MeasurementConfig, Utf8Chars};
 use crate::{icu, simd};
 
@@ -265,6 +266,9 @@ pub struct TextBuffer {
     overtype: bool,
 
     wants_cursor_visibility: bool,
+
+    // Syntax highlighting
+    syntax_highlighter: Option<SyntaxHighlighter>,
 }
 
 impl TextBuffer {
@@ -313,6 +317,8 @@ impl TextBuffer {
             overtype: false,
 
             wants_cursor_visibility: false,
+
+            syntax_highlighter: None,
         })
     }
 
@@ -364,6 +370,43 @@ impl TextBuffer {
         if self.encoding != encoding {
             self.encoding = encoding;
             self.mark_as_dirty();
+        }
+    }
+
+    /// Enable syntax highlighting for the given language.
+    pub fn set_syntax_language(&mut self, language: Language) {
+        let theme = self.syntax_highlighter
+            .as_ref()
+            .map(|h| h.theme().clone())
+            .unwrap_or_default();
+        
+        self.syntax_highlighter = Some(SyntaxHighlighter::new(language, theme));
+        self.update_syntax_highlighting();
+    }
+
+    /// Disable syntax highlighting.
+    pub fn disable_syntax_highlighting(&mut self) {
+        self.syntax_highlighter = None;
+    }
+
+    /// Get the current syntax language, if enabled.
+    pub fn syntax_language(&self) -> Option<Language> {
+        self.syntax_highlighter.as_ref().map(|h| h.language())
+    }
+
+    /// Set the syntax highlighting theme.
+    pub fn set_syntax_theme(&mut self, theme: Theme) {
+        if let Some(highlighter) = &mut self.syntax_highlighter {
+            highlighter.set_theme(theme);
+        }
+    }
+
+    /// Update syntax highlighting for the visible region.
+    fn update_syntax_highlighting(&mut self) {
+        if let Some(_highlighter) = &mut self.syntax_highlighter {
+            // GapBuffer doesn't have as_bytes, we need to read the content
+            // For now, we'll update on render instead
+            // TODO: Optimize this by caching or using a better API
         }
     }
 
@@ -1730,6 +1773,23 @@ impl TextBuffer {
             return None;
         }
 
+        // Update syntax highlighting if needed - collect text first
+        if self.syntax_highlighter.is_some() {
+            let mut text = Vec::new();
+            let mut offset = 0;
+            loop {
+                let chunk = self.read_forward(offset);
+                if chunk.is_empty() {
+                    break;
+                }
+                text.extend_from_slice(chunk);
+                offset += chunk.len();
+            }
+            if let Some(highlighter) = &mut self.syntax_highlighter {
+                highlighter.update(&text, false);
+            }
+        }
+
         let width = destination.width();
         let height = destination.height();
         let line_number_width = self.margin_width.max(3) as usize - 3;
@@ -1978,6 +2038,59 @@ impl TextBuffer {
             }
 
             fb.replace_text(destination.top + y, destination.left, destination.right, &line);
+
+            // Apply syntax highlighting colors to the rendered line
+            // Collect tokens first to avoid borrow checker issues
+            let syntax_tokens: Vec<_> = if let Some(highlighter) = &self.syntax_highlighter {
+                highlighter.get_tokens_in_range(cursor_beg.offset..cursor_end.offset)
+                    .iter()
+                    .map(|t| (t.kind, t.span.clone()))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            
+            if !syntax_tokens.is_empty() {
+                let theme = self.syntax_highlighter.as_ref().unwrap().theme().clone();
+                
+                for (kind, span) in syntax_tokens {
+                    let style = theme.get_style(kind);
+                    
+                    // Calculate visual position for this token
+                    let token_start = span.start.max(cursor_beg.offset);
+                    let token_end = span.end.min(cursor_end.offset);
+                    
+                    if token_start < token_end {
+                        // Find the visual position of the token start
+                        let cursor_token_start = self.cursor_move_to_offset_internal(cursor_beg, token_start);
+                        let cursor_token_end = self.cursor_move_to_offset_internal(cursor_token_start, token_end);
+                        
+                        if cursor_token_start.visual_pos.y == visual_line {
+                            let left = destination.left + self.margin_width + 
+                                (cursor_token_start.visual_pos.x - origin.x).max(0);
+                            let right = (destination.left + self.margin_width + 
+                                (cursor_token_end.visual_pos.x - origin.x)).min(destination.right);
+                            
+                            if left < right {
+                                let rect = Rect {
+                                    left,
+                                    top: destination.top + y,
+                                    right,
+                                    bottom: destination.top + y + 1,
+                                };
+                                
+                                // Apply the token's foreground color
+                                fb.blend_fg(rect, style.fg);
+                                
+                                // Apply background color if specified
+                                if let Some(bg) = style.bg {
+                                    fb.blend_bg(rect, bg);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             cursor = cursor_end;
         }
@@ -2633,6 +2746,11 @@ impl TextBuffer {
 
         // Write!
         self.buffer.replace(self.active_edit_off..self.active_edit_off, text);
+
+        // Mark syntax highlighting as dirty
+        if let Some(highlighter) = &mut self.syntax_highlighter {
+            highlighter.mark_dirty(self.active_edit_off..self.active_edit_off + text.len());
+        }
 
         // Move self.cursor to the end of the newly written text. Can't use `self.set_cursor_internal`,
         // because we're still in the progress of recalculating the line stats.

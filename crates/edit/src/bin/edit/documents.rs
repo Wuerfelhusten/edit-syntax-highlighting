@@ -9,6 +9,7 @@ use std::{fs, io};
 
 use edit::buffer::{RcTextBuffer, TextBuffer};
 use edit::helpers::{CoordType, Point};
+use edit::syntax::Language;
 use edit::{path, sys};
 
 use crate::apperr;
@@ -65,13 +66,29 @@ impl Document {
         let dir = path.parent().map(ToOwned::to_owned).unwrap_or_default();
         self.filename = filename;
         self.dir = Some(DisplayablePathBuf::from_path(dir));
-        self.path = Some(path);
+        self.path = Some(path.clone());
         self.update_file_mode();
+        self.update_syntax_highlighting(&path);
     }
 
     fn update_file_mode(&mut self) {
         let mut tb = self.buffer.borrow_mut();
         tb.set_ruler(if self.filename == "COMMIT_EDITMSG" { 72 } else { 0 });
+    }
+
+    fn update_syntax_highlighting(&mut self, path: &Path) {
+        // Detect language from file extension
+        let language = path
+            .extension()
+            .and_then(OsStr::to_str)
+            .map(Language::from_extension)
+            .unwrap_or(Language::PlainText);
+
+        // Enable syntax highlighting if it's not plain text
+        if language != Language::PlainText {
+            let mut tb = self.buffer.borrow_mut();
+            tb.set_syntax_language(language);
+        }
     }
 }
 

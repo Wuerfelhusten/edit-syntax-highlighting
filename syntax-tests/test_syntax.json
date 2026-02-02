@@ -1,0 +1,17 @@
+{
+    // JSON with Comments (JSONC)
+    "name": "Syntax Highlighting Demo",
+    "version": 1.0,
+    "features": [
+        "colors",
+        "keywords",
+        "strings"
+    ],
+    "enabled": true,
+    "count": 42,
+    /* Block comment
+       over multiple lines */
+    "nested": {
+        "key": "value"
+    }
+}
